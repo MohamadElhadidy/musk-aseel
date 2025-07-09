@@ -123,28 +123,20 @@ class Product extends Model
         if (!$this->compare_price || $this->compare_price <= $this->price) {
             return null;
         }
-        
+
         return round((($this->compare_price - $this->price) / $this->compare_price) * 100);
     }
 
     public function getFormattedPriceAttribute(): string
     {
-        $currency = session('currency') ? 
-            Currency::find(session('currency')) : 
-            Currency::getDefault();
-            
-        return $currency->format($this->price);
+        return app('currency')->format($this->price);
     }
 
     public function getFormattedComparePriceAttribute(): ?string
     {
         if (!$this->compare_price) return null;
-        
-        $currency = session('currency') ? 
-            Currency::find(session('currency')) : 
-            Currency::getDefault();
-            
-        return $currency->format($this->compare_price);
+
+        return app('currency')->format($this->compare_price);
     }
 
     public function getAverageRatingAttribute(): float
@@ -162,7 +154,7 @@ class Product extends Model
         if (!$this->track_quantity) {
             return true;
         }
-        
+
         return $this->quantity > 0;
     }
 
@@ -181,7 +173,7 @@ class Product extends Model
         if (!$this->track_quantity) {
             return 999999; // Unlimited
         }
-        
+
         return $this->quantity;
     }
 

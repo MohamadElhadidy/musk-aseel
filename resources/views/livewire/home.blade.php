@@ -176,7 +176,7 @@ new class extends Component
     @if($featuredCategories->count() > 0)
         <section class="bg-gray-100 py-12">
             <div class="container mx-auto px-4">
-                <h2 class="text-2xl md:text-3xl font-bold text-center mb-8">{{ __('Shop by Category') }}</h2>
+                <h2 class="text-2xl md:text-3xl font-bold text-center mb-8">{{  app()->getLocale() === 'ar' ? 'تسوّق حسب القسم' : __('Shop by Category') }}</h2>
                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
                     @foreach($featuredCategories as $category)
                         <a href="/categories/{{ $category->slug }}" wire:navigate class="group text-center">
@@ -207,7 +207,7 @@ new class extends Component
     <!-- Featured Products -->
     @if($featuredProducts->count() > 0)
         <section class="container mx-auto px-4 py-12">
-            <h2 class="text-2xl md:text-3xl font-bold text-center mb-8">{{ __('Featured Products') }}</h2>
+            <h2 class="text-2xl md:text-3xl font-bold text-center mb-8">{{ app()->getLocale() === 'ar' ? 'منتجات مميزة' : __('Featured Products') }}</h2>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
                 @foreach($featuredProducts as $product)
                     <livewire:product.card :product="$product" :key="'featured-'.$product->id" />
@@ -221,7 +221,7 @@ new class extends Component
     @if($newArrivals->count() > 0)
         <section class="bg-gray-100 py-12">
             <div class="container mx-auto px-4">
-                <h2 class="text-2xl md:text-3xl font-bold text-center mb-8">{{ __('New Arrivals') }}</h2>
+                <h2 class="text-2xl md:text-3xl font-bold text-center mb-8">{{app()->getLocale() === 'ar' ? 'منتجات جديدة' : __('New Arrivals') }}</h2>
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
                     @foreach($newArrivals as $product)
                         <livewire:product.card :product="$product" :key="'new-'.$product->id" />
@@ -237,7 +237,7 @@ new class extends Component
     <!-- Best Sellers -->
     @if($bestSellers->count() > 0)
         <section class="container mx-auto px-4 py-12">
-            <h2 class="text-2xl md:text-3xl font-bold text-center mb-8">{{ __('Best Sellers') }}</h2>
+            <h2 class="text-2xl md:text-3xl font-bold text-center mb-8">{{app()->getLocale() === 'ar' ? 'الأكثر مبيعاً' : __('Best Sellers') }}</h2>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
                 @foreach($bestSellers as $product)
                     <livewire:product.card :product="$product" :key="'best-'.$product->id" />
@@ -249,8 +249,8 @@ new class extends Component
     <!-- Newsletter Section -->
     <section class="bg-blue-600 py-12">
         <div class="container mx-auto px-4 text-center">
-            <h2 class="text-2xl md:text-3xl font-bold text-white mb-4">{{ __('Stay Updated') }}</h2>
-            <p class="text-white mb-8">{{ __('Subscribe to our newsletter and get exclusive offers') }}</p>
+            <h2 class="text-2xl md:text-3xl font-bold text-white mb-4">{{ app()->getLocale() === 'ar' ? 'اشترك في القائمة البريدية لتحصل على العروض الخاصة' :  __('Stay Updated') }}</h2>
+            <p class="text-white mb-8">{{ app()->getLocale() === 'ar' ? 'اشترك في القائمة البريدية لتحصل على العروض الخاصة' : __('Subscribe to our newsletter and get exclusive offers') }}</p>
             <livewire:shared.newsletter-form />
         </div>
     </section>

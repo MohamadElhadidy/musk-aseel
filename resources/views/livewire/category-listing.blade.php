@@ -12,7 +12,7 @@ new class extends Component
     use WithPagination;
 
     public ?Category $category = null;
-    public string $slug = '';
+    public ?string $slug = null;
     public string $sortBy = 'newest';
     public array $selectedBrands = [];
     public array $selectedTags = [];
@@ -22,10 +22,9 @@ new class extends Component
 
     public function mount($slug = null)
     {
-
-        if ($this->category) {
-            $this->slug = $slug;
-
+        $this->slug = $slug;
+        
+        if ($slug) {
             $this->category = Category::where('slug', $slug)
                 ->active()
                 ->firstOrFail();
@@ -73,7 +72,7 @@ new class extends Component
         // Category filter
         if ($this->category) {
             $categoryIds = collect([$this->category->id]);
-
+            
             // Include subcategories
             $this->category->children->each(function ($child) use (&$categoryIds) {
                 $categoryIds->push($child->id);
@@ -168,39 +167,39 @@ new class extends Component
                         </a>
                     </li>
                     @if($category)
-                    @if($category->parent)
-                    <li>
-                        <div class="flex items-center">
-                            <svg class="w-6 h-6 text-gray-400 {{ app()->getLocale() === 'ar' ? 'transform rotate-180' : '' }}" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
-                            </svg>
-                            <a href="/categories/{{ $category->parent->slug }}" wire:navigate class="{{ app()->getLocale() === 'ar' ? 'mr-2' : 'ml-2' }} text-gray-700 hover:text-blue-600">
-                                {{ $category->parent->name }}
-                            </a>
-                        </div>
-                    </li>
-                    @endif
-                    <li>
-                        <div class="flex items-center">
-                            <svg class="w-6 h-6 text-gray-400 {{ app()->getLocale() === 'ar' ? 'transform rotate-180' : '' }}" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
-                            </svg>
-                            <span class="{{ app()->getLocale() === 'ar' ? 'mr-2' : 'ml-2' }} text-gray-500">
-                                {{ $category->name }}
-                            </span>
-                        </div>
-                    </li>
+                        @if($category->parent)
+                            <li>
+                                <div class="flex items-center">
+                                    <svg class="w-6 h-6 text-gray-400 {{ app()->getLocale() === 'ar' ? 'transform rotate-180' : '' }}" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    <a href="/categories/{{ $category->parent->slug }}" wire:navigate class="{{ app()->getLocale() === 'ar' ? 'mr-2' : 'ml-2' }} text-gray-700 hover:text-blue-600">
+                                        {{ $category->parent->name }}
+                                    </a>
+                                </div>
+                            </li>
+                        @endif
+                        <li>
+                            <div class="flex items-center">
+                                <svg class="w-6 h-6 text-gray-400 {{ app()->getLocale() === 'ar' ? 'transform rotate-180' : '' }}" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+                                </svg>
+                                <span class="{{ app()->getLocale() === 'ar' ? 'mr-2' : 'ml-2' }} text-gray-500">
+                                    {{ $category->name }}
+                                </span>
+                            </div>
+                        </li>
                     @else
-                    <li>
-                        <div class="flex items-center">
-                            <svg class="w-6 h-6 text-gray-400 {{ app()->getLocale() === 'ar' ? 'transform rotate-180' : '' }}" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
-                            </svg>
-                            <span class="{{ app()->getLocale() === 'ar' ? 'mr-2' : 'ml-2' }} text-gray-500">
-                                {{ __('All Products') }}
-                            </span>
-                        </div>
-                    </li>
+                        <li>
+                            <div class="flex items-center">
+                                <svg class="w-6 h-6 text-gray-400 {{ app()->getLocale() === 'ar' ? 'transform rotate-180' : '' }}" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+                                </svg>
+                                <span class="{{ app()->getLocale() === 'ar' ? 'mr-2' : 'ml-2' }} text-gray-500">
+                                    {{ __('All Products') }}
+                                </span>
+                            </div>
+                        </li>
                     @endif
                 </ol>
             </nav>
@@ -220,9 +219,10 @@ new class extends Component
                     </div>
 
                     <!-- Mobile Filter Toggle -->
-                    <button
+                    <button 
                         wire:click="toggleFilters"
-                        class="lg:hidden w-full bg-gray-100 text-gray-700 py-2 px-4 rounded-lg mb-4">
+                        class="lg:hidden w-full bg-gray-100 text-gray-700 py-2 px-4 rounded-lg mb-4"
+                    >
                         {{ __('Show Filters') }}
                     </button>
 
@@ -231,19 +231,22 @@ new class extends Component
                         <div>
                             <h4 class="font-semibold mb-3">{{ __('Price Range') }}</h4>
                             <div class="space-y-2">
-                                <input
-                                    type="number"
+                                <input 
+                                    type="number" 
                                     wire:model="minPrice"
                                     placeholder="{{ __('Min') }}"
-                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
-                                <input
-                                    type="number"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                                >
+                                <input 
+                                    type="number" 
                                     wire:model="maxPrice"
                                     placeholder="{{ __('Max') }}"
-                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
-                                <button
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                                >
+                                <button 
                                     wire:click="applyPriceFilter"
-                                    class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition">
+                                    class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition"
+                                >
                                     {{ __('Apply') }}
                                 </button>
                             </div>
@@ -251,44 +254,46 @@ new class extends Component
 
                         <!-- Brands -->
                         @if($availableBrands->count() > 0)
-                        <div>
-                            <h4 class="font-semibold mb-3">{{ __('Brands') }}</h4>
-                            <div class="space-y-2">
-                                @foreach($availableBrands as $brand)
-                                <label class="flex items-center">
-                                    <input
-                                        type="checkbox"
-                                        wire:model.live="selectedBrands"
-                                        value="{{ $brand->id }}"
-                                        class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                                    <span class="{{ app()->getLocale() === 'ar' ? 'mr-2' : 'ml-2' }}">
-                                        {{ $brand->name }}
-                                    </span>
-                                </label>
-                                @endforeach
+                            <div>
+                                <h4 class="font-semibold mb-3">{{ __('Brands') }}</h4>
+                                <div class="space-y-2">
+                                    @foreach($availableBrands as $brand)
+                                        <label class="flex items-center">
+                                            <input 
+                                                type="checkbox" 
+                                                wire:model.live="selectedBrands"
+                                                value="{{ $brand->id }}"
+                                                class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                            >
+                                            <span class="{{ app()->getLocale() === 'ar' ? 'mr-2' : 'ml-2' }}">
+                                                {{ $brand->name }}
+                                            </span>
+                                        </label>
+                                    @endforeach
+                                </div>
                             </div>
-                        </div>
                         @endif
 
                         <!-- Tags -->
                         @if($availableTags->count() > 0)
-                        <div>
-                            <h4 class="font-semibold mb-3">{{ __('Tags') }}</h4>
-                            <div class="space-y-2">
-                                @foreach($availableTags as $tag)
-                                <label class="flex items-center">
-                                    <input
-                                        type="checkbox"
-                                        wire:model.live="selectedTags"
-                                        value="{{ $tag->id }}"
-                                        class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                                    <span class="{{ app()->getLocale() === 'ar' ? 'mr-2' : 'ml-2' }}">
-                                        {{ $tag->name }}
-                                    </span>
-                                </label>
-                                @endforeach
+                            <div>
+                                <h4 class="font-semibold mb-3">{{ __('Tags') }}</h4>
+                                <div class="space-y-2">
+                                    @foreach($availableTags as $tag)
+                                        <label class="flex items-center">
+                                            <input 
+                                                type="checkbox" 
+                                                wire:model.live="selectedTags"
+                                                value="{{ $tag->id }}"
+                                                class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                            >
+                                            <span class="{{ app()->getLocale() === 'ar' ? 'mr-2' : 'ml-2' }}">
+                                                {{ $tag->name }}
+                                            </span>
+                                        </label>
+                                    @endforeach
+                                </div>
                             </div>
-                        </div>
                         @endif
                     </div>
                 </div>
@@ -303,9 +308,10 @@ new class extends Component
                     </h1>
                     <div class="flex items-center gap-2">
                         <span class="text-gray-600">{{ __('Sort by:') }}</span>
-                        <select
+                        <select 
                             wire:model.live="sortBy"
-                            class="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
+                            class="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                        >
                             <option value="newest">{{ __('Newest') }}</option>
                             <option value="price_low">{{ __('Price: Low to High') }}</option>
                             <option value="price_high">{{ __('Price: High to Low') }}</option>
@@ -316,41 +322,42 @@ new class extends Component
 
                 <!-- Subcategories -->
                 @if($category && $category->children->count() > 0)
-                <div class="mb-6">
-                    <h3 class="font-semibold mb-3">{{ __('Subcategories') }}</h3>
-                    <div class="flex flex-wrap gap-2">
-                        @foreach($category->children as $child)
-                        <a
-                            href="/categories/{{ $child->slug }}"
-                            wire:navigate
-                            class="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition">
-                            {{ $child->name }}
-                        </a>
-                        @endforeach
+                    <div class="mb-6">
+                        <h3 class="font-semibold mb-3">{{ __('Subcategories') }}</h3>
+                        <div class="flex flex-wrap gap-2">
+                            @foreach($category->children as $child)
+                                <a 
+                                    href="/categories/{{ $child->slug }}" 
+                                    wire:navigate
+                                    class="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition"
+                                >
+                                    {{ $child->name }}
+                                </a>
+                            @endforeach
+                        </div>
                     </div>
-                </div>
                 @endif
 
                 <!-- Products -->
                 @if($products->count() > 0)
-                <div class="grid grid-cols-2 md:grid-cols-3 gap-6">
-                    @foreach($products as $product)
-                    <livewire:product.card :product="$product" :key="$product->id" />
-                    @endforeach
-                </div>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-6">
+                        @foreach($products as $product)
+                            <livewire:product.card :product="$product" :key="$product->id" />
+                        @endforeach
+                    </div>
 
-                <!-- Pagination -->
-                <div class="mt-8">
-                    {{ $products->links() }}
-                </div>
+                    <!-- Pagination -->
+                    <div class="mt-8">
+                        {{ $products->links() }}
+                    </div>
                 @else
-                <div class="text-center py-12">
-                    <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                    <h3 class="text-lg font-semibold text-gray-900 mb-2">{{ __('No products found') }}</h3>
-                    <p class="text-gray-600">{{ __('Try adjusting your filters or search criteria') }}</p>
-                </div>
+                    <div class="text-center py-12">
+                        <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">{{ __('No products found') }}</h3>
+                        <p class="text-gray-600">{{ __('Try adjusting your filters or search criteria') }}</p>
+                    </div>
                 @endif
             </div>
         </div>
