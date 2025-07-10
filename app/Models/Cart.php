@@ -67,16 +67,25 @@ class Cart extends Model
     {
         $price = $variant ? $variant->price : $product->price;
         
-        $item = $this->items()->updateOrCreate(
-            [
+        // Check if item already exists in cart
+        $existingItem = $this->items()
+            ->where('product_id', $product->id)
+            ->where('product_variant_id', $variant?->id)
+            ->first();
+
+        if ($existingItem) {
+            // Increment quantity if item exists
+            $existingItem->increment('quantity', $quantity);
+            $item = $existingItem;
+        } else {
+            // Create new item if it doesn't exist
+            $item = $this->items()->create([
                 'product_id' => $product->id,
-                'product_variant_id' => $variant?->id
-            ],
-            [
+                'product_variant_id' => $variant?->id,
                 'quantity' => $quantity,
                 'price' => $price
-            ]
-        );
+            ]);
+        }
 
         $this->calculateTotals();
 

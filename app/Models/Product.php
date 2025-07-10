@@ -123,25 +123,30 @@ class Product extends Model
         if (!$this->compare_price || $this->compare_price <= $this->price) {
             return null;
         }
-
+        
         return round((($this->compare_price - $this->price) / $this->compare_price) * 100);
     }
 
     public function getFormattedPriceAttribute(): string
     {
-        return app('currency')->format($this->price);
+        $currency = app('currency');
+            
+        return $currency->format($this->price);
     }
 
     public function getFormattedComparePriceAttribute(): ?string
     {
         if (!$this->compare_price) return null;
-
-        return app('currency')->format($this->compare_price);
+        
+        $currency = app('currency');
+            
+        return $currency->format($this->compare_price);
     }
 
     public function getAverageRatingAttribute(): float
     {
-        return round($this->reviews()->approved()->avg('rating') ?? 0, 1);
+        $avg = $this->reviews()->approved()->avg('rating');
+        return $avg ? round($avg, 1) : 0;
     }
 
     public function getReviewsCountAttribute(): int
@@ -154,7 +159,7 @@ class Product extends Model
         if (!$this->track_quantity) {
             return true;
         }
-
+        
         return $this->quantity > 0;
     }
 
@@ -173,7 +178,7 @@ class Product extends Model
         if (!$this->track_quantity) {
             return 999999; // Unlimited
         }
-
+        
         return $this->quantity;
     }
 

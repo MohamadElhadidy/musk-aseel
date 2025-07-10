@@ -252,7 +252,7 @@ new class extends Component
                                             {{ $order->formatted_total }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                            <a href="/account/orders/{{ $order->id }}" wire:navigate class="text-blue-600 hover:text-blue-900">
+                                            <a href="/account/orders/{{ $order->order_number }}" wire:navigate class="text-blue-600 hover:text-blue-900">
                                                 {{ __('View') }}
                                             </a>
                                         </td>

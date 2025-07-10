@@ -3,14 +3,30 @@
 use Livewire\Volt\Component;
 use Livewire\WithPagination;
 use App\Models\Cart;
+use App\Models\Product;
 
 new class extends Component
 {
     use WithPagination;
 
+    public array $guestWishlist = [];
+
+    public function mount()
+    {
+        // Load guest wishlist from session
+        $this->guestWishlist = session('wishlist', []);
+    }
+
     public function removeFromWishlist($productId)
     {
-        auth()->user()->wishlist()->detach($productId);
+        if (auth()->check()) {
+            auth()->user()->wishlist()->detach($productId);
+        } else {
+            $this->guestWishlist = array_filter($this->guestWishlist, function($id) use ($productId) {
+                return $id != $productId;
+            });
+            session(['wishlist' => $this->guestWishlist]);
+        }
         
         $this->dispatch('wishlist-updated');
         $this->dispatch('toast', 
@@ -21,7 +37,7 @@ new class extends Component
 
     public function addToCart($productId)
     {
-        $product = auth()->user()->wishlist()->find($productId);
+        $product = Product::find($productId);
         
         if (!$product) {
             return;
@@ -51,7 +67,9 @@ new class extends Component
         $addedCount = 0;
         $outOfStockCount = 0;
 
-        foreach (auth()->user()->wishlist as $product) {
+        $products = $this->getWishlistProducts();
+
+        foreach ($products as $product) {
             if ($product->isInStock()) {
                 $cart->addItem($product);
                 $addedCount++;
@@ -78,7 +96,12 @@ new class extends Component
 
     public function clearWishlist()
     {
-        auth()->user()->wishlist()->detach();
+        if (auth()->check()) {
+            auth()->user()->wishlist()->detach();
+        } else {
+            $this->guestWishlist = [];
+            session(['wishlist' => []]);
+        }
         
         $this->dispatch('wishlist-updated');
         $this->dispatch('toast', 
@@ -87,10 +110,39 @@ new class extends Component
         );
     }
 
+    private function getWishlistProducts()
+    {
+        if (auth()->check()) {
+            return auth()->user()->wishlist;
+        } else {
+            return Product::whereIn('id', $this->guestWishlist)->get();
+        }
+    }
+
     public function with()
     {
+        $products = $this->getWishlistProducts();
+        
+        // Paginate manually for guest wishlist
+        if (!auth()->check()) {
+            $perPage = 12;
+            $page = request()->get('page', 1);
+            $offset = ($page - 1) * $perPage;
+            
+            $items = $products->slice($offset, $perPage);
+            $products = new \Illuminate\Pagination\LengthAwarePaginator(
+                $items,
+                $products->count(),
+                $perPage,
+                $page,
+                ['path' => request()->url()]
+            );
+        } else {
+            $products = auth()->user()->wishlist()->paginate(12);
+        }
+
         return [
-            'products' => auth()->user()->wishlist()->paginate(12),
+            'products' => $products,
             'layout' => 'components.layouts.app',
         ];
     }
@@ -214,6 +266,12 @@ new class extends Component
             </svg>
             <h2 class="text-2xl font-semibold text-gray-900 mb-2">{{ __('Your wishlist is empty') }}</h2>
             <p class="text-gray-600 mb-8">{{ __('Save your favorite products to buy them later.') }}</p>
+            @if(!auth()->check())
+                <p class="text-sm text-gray-500 mb-8">
+                    <a href="/login" wire:navigate class="text-blue-600 hover:text-blue-700">{{ __('Login') }}</a>
+                    {{ __('to sync your wishlist across devices') }}
+                </p>
+            @endif
             <a 
                 href="/categories" 
                 wire:navigate

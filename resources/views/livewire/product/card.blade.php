@@ -12,34 +12,61 @@ new class extends Component
 
     public function mount(Product $product)
     {
-        $this->product = $product;
+        $this->product = $product->load(['reviews' => function($q) {
+            $q->approved();
+        }]);
         
         if (auth()->check()) {
             $this->isWishlisted = auth()->user()->isWishlisted($product);
+        } else {
+            // Check guest wishlist in session
+            $guestWishlist = session('wishlist', []);
+            $this->isWishlisted = in_array($product->id, $guestWishlist);
         }
     }
 
     public function toggleWishlist()
     {
-        if (!auth()->check()) {
-            $this->redirect('/login', navigate: true);
-            return;
-        }
-
-        if ($this->isWishlisted) {
-            auth()->user()->wishlist()->detach($this->product);
-            $this->isWishlisted = false;
-            $this->dispatch('toast', 
-                type: 'info',
-                message: __('Product removed from wishlist')
-            );
+        if (auth()->check()) {
+            // Authenticated user wishlist
+            if ($this->isWishlisted) {
+                auth()->user()->wishlist()->detach($this->product);
+                $this->isWishlisted = false;
+                $this->dispatch('toast', 
+                    type: 'info',
+                    message: __('Product removed from wishlist')
+                );
+            } else {
+                auth()->user()->wishlist()->attach($this->product);
+                $this->isWishlisted = true;
+                $this->dispatch('toast', 
+                    type: 'success',
+                    message: __('Product added to wishlist')
+                );
+            }
         } else {
-            auth()->user()->wishlist()->attach($this->product);
-            $this->isWishlisted = true;
-            $this->dispatch('toast', 
-                type: 'success',
-                message: __('Product added to wishlist')
-            );
+            // Guest wishlist using session
+            $guestWishlist = session('wishlist', []);
+            
+            if ($this->isWishlisted) {
+                $guestWishlist = array_filter($guestWishlist, function($id) {
+                    return $id != $this->product->id;
+                });
+                session(['wishlist' => array_values($guestWishlist)]);
+                $this->isWishlisted = false;
+                $this->dispatch('toast', 
+                    type: 'info',
+                    message: __('Product removed from wishlist')
+                );
+            } else {
+                $guestWishlist[] = $this->product->id;
+                session(['wishlist' => $guestWishlist]);
+                $this->isWishlisted = true;
+                $this->dispatch('toast', 
+                    type: 'success',
+                    message: __('Product added to wishlist')
+                );
+            }
         }
 
         $this->dispatch('wishlist-updated');

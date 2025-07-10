@@ -1,0 +1,135 @@
+<?php 
+return [
+    // General
+    'home' => 'Home',
+    'about' => 'About',
+    'contact' => 'Contact',
+    'faq' => 'FAQ',
+    'search' => 'Search',
+    'login' => 'Login',
+    'register' => 'Register',
+    'logout' => 'Logout',
+    'account' => 'Account',
+    'dashboard' => 'Dashboard',
+    'profile' => 'Profile',
+    'settings' => 'Settings',
+    
+    // Products
+    'products' => 'Products',
+    'product' => 'Product',
+    'categories' => 'Categories',
+    'category' => 'Category',
+    'all_products' => 'All Products',
+    'featured_products' => 'Featured Products',
+    'new_arrivals' => 'New Arrivals',
+    'best_sellers' => 'Best Sellers',
+    'on_sale' => 'On Sale',
+    'out_of_stock' => 'Out of Stock',
+    'in_stock' => 'In Stock',
+    'add_to_cart' => 'Add to Cart',
+    'buy_now' => 'Buy Now',
+    'view_details' => 'View Details',
+    
+    // Cart & Checkout
+    'cart' => 'Cart',
+    'shopping_cart' => 'Shopping Cart',
+    'empty_cart' => 'Your cart is empty',
+    'subtotal' => 'Subtotal',
+    'shipping' => 'Shipping',
+    'tax' => 'Tax',
+    'total' => 'Total',
+    'checkout' => 'Checkout',
+    'proceed_to_checkout' => 'Proceed to Checkout',
+    'continue_shopping' => 'Continue Shopping',
+    
+    // Wishlist
+    'wishlist' => 'Wishlist',
+    'my_wishlist' => 'My Wishlist',
+    'add_to_wishlist' => 'Add to Wishlist',
+    'remove_from_wishlist' => 'Remove from Wishlist',
+    
+    // Orders
+    'orders' => 'Orders',
+    'order' => 'Order',
+    'order_history' => 'Order History',
+    'order_details' => 'Order Details',
+    'order_number' => 'Order Number',
+    'order_date' => 'Order Date',
+    'order_status' => 'Order Status',
+    'order_total' => 'Order Total',
+    
+    // Account
+    'my_account' => 'My Account',
+    'account_dashboard' => 'Account Dashboard',
+    'personal_information' => 'Personal Information',
+    'addresses' => 'Addresses',
+    'billing_address' => 'Billing Address',
+    'shipping_address' => 'Shipping Address',
+    'change_password' => 'Change Password',
+    'current_password' => 'Current Password',
+    'new_password' => 'New Password',
+    'confirm_password' => 'Confirm Password',
+    
+    // Forms
+    'email' => 'Email',
+    'password' => 'Password',
+    'remember_me' => 'Remember Me',
+    'forgot_password' => 'Forgot Password?',
+    'full_name' => 'Full Name',
+    'first_name' => 'First Name',
+    'last_name' => 'Last Name',
+    'phone' => 'Phone',
+    'address' => 'Address',
+    'address_line_1' => 'Address Line 1',
+    'address_line_2' => 'Address Line 2',
+    'city' => 'City',
+    'state' => 'State',
+    'country' => 'Country',
+    'postal_code' => 'Postal Code',
+    
+    // Actions
+    'save' => 'Save',
+    'update' => 'Update',
+    'delete' => 'Delete',
+    'cancel' => 'Cancel',
+    'submit' => 'Submit',
+    'apply' => 'Apply',
+    'clear' => 'Clear',
+    'filter' => 'Filter',
+    'sort' => 'Sort',
+    'search_products' => 'Search products...',
+    
+    // Messages
+    'welcome' => 'Welcome',
+    'welcome_back' => 'Welcome Back',
+    'thank_you' => 'Thank You',
+    'success' => 'Success',
+    'error' => 'Error',
+    'warning' => 'Warning',
+    'info' => 'Info',
+    'loading' => 'Loading...',
+    'no_results' => 'No results found',
+    'showing_results' => 'Showing results for',
+    
+    // Newsletter
+    'newsletter' => 'Newsletter',
+    'subscribe_newsletter' => 'Subscribe to our newsletter',
+    'enter_email' => 'Enter your email',
+    'subscribe' => 'Subscribe',
+    'unsubscribe' => 'Unsubscribe',
+    
+    // Footer
+    'quick_links' => 'Quick Links',
+    'customer_service' => 'Customer Service',
+    'follow_us' => 'Follow Us',
+    'all_rights_reserved' => 'All rights reserved',
+    'privacy_policy' => 'Privacy Policy',
+    'terms_conditions' => 'Terms & Conditions',
+    'return_policy' => 'Return Policy',
+    
+    // Currency & Language
+    'language' => 'Language',
+    'currency' => 'Currency',
+    'select_language' => 'Select Language',
+    'select_currency' => 'Select Currency',
+];

@@ -21,6 +21,11 @@ new class extends Component
     public bool $showSearchResults = false;
     public $searchResults = [];
 
+    protected $listeners = [
+        'cart-updated' => 'updateCounts',
+        'wishlist-updated' => 'updateCounts'
+    ];
+
     public function mount()
     {
         $this->languages = Language::active()->get();
@@ -41,6 +46,10 @@ new class extends Component
 
         if (auth()->check()) {
             $this->wishlistCount = auth()->user()->wishlist()->count();
+        } else {
+            // Get guest wishlist count from session
+            $guestWishlist = session('wishlist', []);
+            $this->wishlistCount = count($guestWishlist);
         }
     }
 
@@ -105,7 +114,7 @@ new class extends Component
                         </button>
                         <div x-show="open" @click.away="open = false" class="absolute top-full {{ app()->getLocale() === 'ar' ? 'left-0' : 'right-0' }} mt-1 bg-white text-gray-900 rounded shadow-lg py-1 w-32">
                             @foreach($languages as $language)
-                            <button wire:click.prevent="changeLanguage('{{ $language->code }}')" class="block w-full text-{{ app()->getLocale() === 'ar' ? 'right' : 'left' }} px-4 py-2 hover:bg-gray-100">
+                            <button wire:click="changeLanguage('{{ $language->code }}')" class="block w-full text-{{ app()->getLocale() === 'ar' ? 'right' : 'left' }} px-4 py-2 hover:bg-gray-100">
                                 {{ $language->native_name }}
                             </button>
                             @endforeach
@@ -116,9 +125,7 @@ new class extends Component
                     <div class="relative" x-data="{ open: false }">
                         <button @click="open = !open" class="flex items-center gap-1 hover:text-gray-300">
                             @php
-                            $currentCurrency = request()->cookie('currency') ?
-                            Currency::find(request()->cookie('currency')) :
-                            Currency::getDefault();
+                            $currentCurrency = app('currency');
                             @endphp
                             <span>{{ $currentCurrency->code }}</span>
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

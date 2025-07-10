@@ -124,7 +124,7 @@ class User extends Authenticatable
             ->whereHas('items', function ($q) use ($product) {
                 $q->where('product_id', $product->id);
             })
-            ->whereIn('status', ['delivered', 'completed'])
+            ->whereIn('status', ['delivered']) // Only delivered orders can be reviewed
             ->exists();
             
         // Check if user hasn't already reviewed

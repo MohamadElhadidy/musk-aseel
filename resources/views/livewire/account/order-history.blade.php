@@ -71,6 +71,39 @@ new class extends Component
             'layout' => 'components.layouts.app',
         ];
     }
+
+    public function cancelOrder($id)
+    {
+        $order = Order::find($id);
+
+        if (!$order->canBeCancelled()) {
+            $this->dispatch(
+                'toast',
+                type: 'error',
+                message: __('This order cannot be cancelled')
+            );
+            return;
+        }
+
+        $order->updateStatus('cancelled', __('Cancelled by customer'), auth()->id());
+
+        // Restore product stock
+        foreach ($order->items as $item) {
+            if ($item->variant) {
+                $item->variant->increment('quantity', $item->quantity);
+            } else {
+                $item->product->incrementQuantity($item->quantity);
+            }
+        }
+
+        $this->dispatch(
+            'toast',
+            type: 'success',
+            message: __('Order cancelled successfully')
+        );
+
+        $this->redirect('/account/orders', navigate: true);
+    }
 }; ?>
 
 <div class="container mx-auto px-4 py-8">
