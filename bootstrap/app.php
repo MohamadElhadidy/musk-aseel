@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\SetLocaleAndCurrency;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -24,6 +25,9 @@ return Application::configure(basePath: dirname(__DIR__))
             ShareErrorsFromSession::class,
             ValidateCsrfToken::class,
             SetLocaleAndCurrency::class, // ✅ AFTER encryption
+        ]);
+        $middleware->alias([
+            'admin' => AdminMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

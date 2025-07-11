@@ -27,13 +27,13 @@
     </style>
 </head>
 <body class="antialiased bg-gray-100">
-    <div class="min-h-screen flex">
+    <div class="min-h-screen flex" x-data="{ sidebarOpen: false }">
         <!-- Sidebar -->
         <livewire:admin.sidebar />
         
         <!-- Main Content -->
         <div class="flex-1 flex flex-col">
-            <!-- Top Navigation -->
+            <!-- Top Bar -->
             <livewire:admin.topbar />
             
             <!-- Page Content -->

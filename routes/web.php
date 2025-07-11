@@ -52,24 +52,36 @@ Route::middleware(['auth'])->prefix('account')->name('account.')->group(function
     Volt::route('/profile', 'account.profile-settings')->name('profile');
 });
 
-Route::middleware(['auth'])->group(function () {
-    // Volt::route('/account', 'account.dashboard');
-    // Volt::route('/account/orders', 'account.orders.index');
-    // Volt::route('/account/orders/{order:order_number}', 'account.orders.show');
-    // Volt::route('/account/addresses', 'account.addresses');
-    // Volt::route('/account/profile', 'account.profile');
+
+Route::middleware(['admin'])->prefix('admin')->name('admin.')->group(function () {
+    Volt::route('/', 'admin.dashboard')->name('admin');
+    Volt::route('/products', 'admin.products-list')->name('products');
+    Volt::route('/products/create', 'admin.products-create')->name('products.create');
+    Volt::route('/orders', 'admin.orders')->name('orders');
+    Volt::route('/categories', 'admin.categories')->name('categories');
+    Volt::route('/brands', 'admin.brands')->name('brands');
+    Volt::route('/tags', 'admin.tags')->name('tags');
+    Volt::route('/customers', 'admin.customers')->name('customers');
+    Volt::route('/coupons', 'admin.coupons')->name('coupons');
 });
+
+
+
+
+
+
+
 
 
 // Newsletter Routes
 Route::get('/newsletter/unsubscribe/{token}', function ($token) {
     $subscriber = \App\Models\NewsletterSubscriber::where('token', $token)->first();
-    
+
     if ($subscriber) {
         $subscriber->unsubscribe();
         return view('newsletter.unsubscribed');
     }
-    
+
     return redirect('/');
 })->name('newsletter.unsubscribe');
 
@@ -78,7 +90,7 @@ Route::post('/logout', function () {
     auth()->logout();
     request()->session()->invalidate();
     request()->session()->regenerateToken();
-    
+
     return redirect('/');
 })->name('logout');
 
@@ -86,12 +98,12 @@ Route::post('/logout', function () {
 Route::get('/language/{locale}', function ($locale) {
     if (in_array($locale, ['en', 'ar'])) {
         session(['locale' => $locale]);
-        
+
         if (auth()->check()) {
             auth()->user()->update(['preferred_locale' => $locale]);
         }
     }
-    
+
     return redirect()->back();
 })->name('language.switch');
 
@@ -123,6 +135,3 @@ Route::prefix('api')->name('api.')->group(function () {
 Route::fallback(function () {
     return view('errors.404');
 });
-
-
-
