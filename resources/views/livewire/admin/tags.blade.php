@@ -4,6 +4,7 @@ use Livewire\Volt\Component;
 use Livewire\WithPagination;
 use App\Models\Tag;
 use Illuminate\Support\Str;
+use Livewire\Attributes\Layout;
 
 new class extends Component
 {
@@ -18,6 +19,7 @@ new class extends Component
     
     public bool $showForm = false;
 
+    #[Layout('components.layouts.admin')]
     public function mount()
     {
         if (!auth()->user()?->is_admin) {

@@ -63,6 +63,7 @@ Route::middleware(['admin'])->prefix('admin')->name('admin.')->group(function ()
     Volt::route('/tags', 'admin.tags')->name('tags');
     Volt::route('/customers', 'admin.customers')->name('customers');
     Volt::route('/coupons', 'admin.coupons')->name('coupons');
+    Volt::route('/reviews', 'admin.reviews')->name('reviews');
 });
 
 
