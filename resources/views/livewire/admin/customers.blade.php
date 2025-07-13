@@ -229,7 +229,7 @@ use Livewire\Attributes\Layout;
                                 </span>
                             </td>
                             <td class="px-6 py-4 text-sm">
-                                <button wire:click="viewCustomer({{ $customer->id }})" class="text-blue-600 hover:underline mr-2">View</button>
+                                <a href="/admin/customers/{{ $customer->id }}"  class="text-blue-600 hover:underline mr-2">View</button>
                                 <button wire:click="edit({{ $customer->id }})" class="text-indigo-600 hover:underline mr-2">Edit</button>
                                 @if($customer->orders_count == 0)
                                     <button wire:click="delete({{ $customer->id }})" class="text-red-600 hover:underline">Delete</button>
