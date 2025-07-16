@@ -97,6 +97,11 @@ class User extends Authenticatable
             ->first();
     }
 
+    public function isAdmin(): bool
+    {
+        return $this->is_admin;
+    }
+
     public function getDefaultBillingAddressAttribute()
     {
         return $this->addresses()

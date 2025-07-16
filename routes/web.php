@@ -54,7 +54,7 @@ Route::middleware(['auth'])->prefix('account')->name('account.')->group(function
 
 
 Route::middleware(['admin'])->prefix('admin')->name('admin.')->group(function () {
-    Volt::route('/', 'admin.dashboard')->name('admin');
+    Volt::route('/', 'admin.dashboard')->name('dashboard');
     Volt::route('/products', 'admin.products-list')->name('products');
     Volt::route('/products/create', 'admin.products-create')->name('products.create');
     Volt::route('/orders', 'admin.orders')->name('orders');

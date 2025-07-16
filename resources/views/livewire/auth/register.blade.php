@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\Cart;
+use App\Models\NewsletterSubscriber;
 use Livewire\Volt\Component;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
@@ -36,10 +38,10 @@ new class extends Component
 
         // Subscribe to newsletter if requested
         if ($this->newsletter) {
-            // \App\Models\NewsletterSubscriber::firstOrCreate(
-            //     ['email' => $this->email],
-            //     ['token' => \Illuminate\Support\Str::random(32)]
-            // );
+            NewsletterSubscriber::firstOrCreate(
+                ['email' => $this->email],
+                ['token' => \Illuminate\Support\Str::random(32)]
+            );
         }
 
         event(new Registered($user));
@@ -48,7 +50,7 @@ new class extends Component
 
         // Merge guest cart with user cart if exists
         if (session()->has('cart_session_id')) {
-            $guestCart = \App\Models\Cart::where('session_id', session('cart_session_id'))->first();
+            $guestCart = Cart::where('session_id', session('cart_session_id'))->first();
             
             if ($guestCart) {
                 $guestCart->update(['user_id' => $user->id, 'session_id' => null]);
@@ -86,6 +88,7 @@ new class extends Component
 
         <!-- Register Form -->
         <form wire:submit="register" class="mt-8 space-y-6">
+            @csrf
             <div class="bg-white p-8 rounded-lg shadow">
                 <div class="space-y-4">
                     <!-- Name -->

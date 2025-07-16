@@ -45,6 +45,6 @@
 
     <livewire:shared.toast />
     
-    @livewireScripts
+@livewireScripts
 </body>
 </html>
