@@ -50,6 +50,7 @@ return new class extends Migration
             $table->string('coupon_code')->nullable();
             $table->foreignId('shipping_method_id')->nullable()->constrained()->onDelete('set null');
             $table->json('shipping_method_details')->nullable();
+            $table->foreignId('payment_method_id')->nullable()->constrained()->onDelete('set null');
             $table->text('notes')->nullable();
             $table->timestamps();
         });
@@ -92,11 +93,11 @@ return new class extends Migration
         Schema::create('payments', function (Blueprint $table) {
             $table->id();
             $table->foreignId('order_id')->constrained()->onDelete('cascade');
+            $table->foreignId('transaction_id')->nullable()->constrained()->onDelete('set null');
             $table->string('payment_method');
             $table->enum('status', ['pending', 'processing', 'completed', 'failed', 'cancelled', 'refunded']);
             $table->decimal('amount', 10, 2);
             $table->string('currency_code', 3);
-            $table->string('transaction_id')->nullable();
             $table->json('gateway_response')->nullable();
             $table->timestamps();
         });
