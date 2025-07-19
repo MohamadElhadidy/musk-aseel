@@ -24,6 +24,10 @@
             font-family: 'Tajawal', sans-serif;
         }
         @endif
+
+        [x-cloak] {
+        display: none !important;
+    }
     </style>
 </head>
 <body class="antialiased bg-gray-50">

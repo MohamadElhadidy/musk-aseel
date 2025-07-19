@@ -64,9 +64,15 @@ class Order extends Model
         return $this->hasMany(OrderAddress::class);
     }
 
-    public function shippingAddress()
+    public function getShippingAddress()
     {
         return $this->addresses()->where('type', 'shipping')->first();
+    }
+
+
+    public function shippingAddress()
+    {
+        return $this->hasOne(OrderAddress::class)->where('type', 'shipping');
     }
 
     public function billingAddress()
@@ -114,14 +120,14 @@ class Order extends Model
         $prefix = 'ORD';
         $year = date('Y');
         $random = strtoupper(substr(uniqid(), -6));
-        
+
         return "{$prefix}-{$year}-{$random}";
     }
 
     public function updateStatus(string $status, ?string $comment = null, ?int $userId = null): void
     {
         $this->update(['status' => $status]);
-        
+
         $this->statusHistories()->create([
             'status' => $status,
             'comment' => $comment,
@@ -147,7 +153,7 @@ class Order extends Model
 
     public function getStatusColorAttribute(): string
     {
-        return match($this->status) {
+        return match ($this->status) {
             'pending' => 'yellow',
             'processing' => 'blue',
             'shipped' => 'indigo',
@@ -160,7 +166,7 @@ class Order extends Model
 
     public function getStatusLabelAttribute(): string
     {
-        return match($this->status) {
+        return match ($this->status) {
             'pending' => __('Pending'),
             'processing' => __('Processing'),
             'shipped' => __('Shipped'),
@@ -174,7 +180,7 @@ class Order extends Model
     public function calculateTotals(): void
     {
         $subtotal = $this->items->sum('total');
-        
+
         $this->update([
             'subtotal' => $subtotal,
             'total' => $subtotal + $this->shipping_amount + $this->tax_amount - $this->discount_amount
