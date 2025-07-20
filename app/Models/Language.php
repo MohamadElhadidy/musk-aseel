@@ -20,7 +20,7 @@ class Language extends Model
 
     protected $casts = [
         'is_active' => 'boolean',
-        'is_default' => 'boolean',
+        'is_default' => 'boolean'
     ];
 
     public function scopeActive($query)
@@ -31,11 +31,6 @@ class Language extends Model
     public function scopeDefault($query)
     {
         return $query->where('is_default', true);
-    }
-
-    public function isRtl(): bool
-    {
-        return $this->direction === 'rtl';
     }
 
     public static function getDefault()

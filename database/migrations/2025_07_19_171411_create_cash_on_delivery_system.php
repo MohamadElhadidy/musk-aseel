@@ -10,7 +10,7 @@ return new class extends Migration
     {
         // Add COD-specific fields to orders table
         Schema::table('orders', function (Blueprint $table) {
-            $table->boolean('is_cod')->default(false)->after('payment_method_id');
+            $table->boolean('is_cod')->default(false)->after('payment_method');
             $table->decimal('cod_fee', 10, 2)->default(0)->after('is_cod');
             $table->decimal('amount_to_collect', 10, 2)->nullable()->after('cod_fee');
             $table->timestamp('payment_collected_at')->nullable()->after('amount_to_collect');
@@ -36,62 +36,56 @@ return new class extends Migration
             $table->id();
             $table->foreignId('order_id')->constrained()->onDelete('restrict');
             $table->foreignId('delivery_person_id')->nullable()->constrained()->onDelete('set null');
-            $table->decimal('amount_collected', 10, 2);
-            $table->decimal('cod_fee', 10, 2)->default(0);
-            $table->enum('status', ['pending', 'collected', 'deposited', 'reconciled']);
+            $table->foreignId('collected_by')->constrained('users')->onDelete('restrict');
+            $table->decimal('amount', 10, 2);
+            $table->enum('status', ['pending', 'collected', 'remitted'])->default('pending');
             $table->timestamp('collected_at')->nullable();
-            $table->timestamp('deposited_at')->nullable();
-            $table->foreignId('collected_by')->nullable()->constrained('users')->onDelete('set null');
-            $table->foreignId('deposited_by')->nullable()->constrained('users')->onDelete('set null');
-            $table->string('deposit_reference')->nullable(); // Bank deposit slip number
             $table->text('notes')->nullable();
             $table->timestamps();
+            
+            $table->index(['status', 'delivery_person_id']);
         });
 
-        // Create delivery assignments table
+        // Create delivery assignments
         Schema::create('delivery_assignments', function (Blueprint $table) {
             $table->id();
             $table->foreignId('order_id')->constrained()->onDelete('cascade');
             $table->foreignId('delivery_person_id')->constrained()->onDelete('restrict');
-            $table->enum('status', ['assigned', 'accepted', 'picked_up', 'out_for_delivery', 'delivered', 'failed', 'returned']);
+            $table->foreignId('assigned_by')->constrained('users')->onDelete('restrict');
+            $table->enum('status', ['assigned', 'accepted', 'in_transit', 'delivered', 'failed', 'reassigned']);
             $table->timestamp('assigned_at');
             $table->timestamp('accepted_at')->nullable();
-            $table->timestamp('picked_up_at')->nullable();
             $table->timestamp('delivered_at')->nullable();
             $table->text('failure_reason')->nullable();
-            $table->integer('delivery_attempts')->default(0);
-            $table->date('scheduled_date')->nullable();
-            $table->string('time_slot')->nullable(); // morning, afternoon, evening
-            $table->string('recipient_name')->nullable();
-            $table->string('recipient_phone')->nullable();
-            $table->text('delivery_notes')->nullable();
-            $table->decimal('latitude', 10, 7)->nullable(); // For GPS tracking
-            $table->decimal('longitude', 10, 7)->nullable();
             $table->timestamps();
+            
+            $table->unique(['order_id', 'delivery_person_id', 'assigned_at']);
+            $table->index(['delivery_person_id', 'status']);
         });
 
-        // Create COD remittance table for bulk deposits
+        // Create COD remittances for bulk submission of collected amounts
         Schema::create('cod_remittances', function (Blueprint $table) {
             $table->id();
             $table->string('remittance_number')->unique();
             $table->foreignId('delivery_person_id')->constrained()->onDelete('restrict');
             $table->decimal('total_amount', 10, 2);
-            $table->integer('orders_count');
-            $table->enum('status', ['pending', 'submitted', 'verified', 'deposited', 'reconciled']);
-            $table->timestamp('submitted_at')->nullable();
-            $table->timestamp('verified_at')->nullable();
-            $table->timestamp('deposited_at')->nullable();
+            $table->integer('order_count');
+            $table->enum('status', ['pending', 'submitted', 'verified', 'discrepancy'])->default('pending');
             $table->foreignId('submitted_by')->nullable()->constrained('users')->onDelete('set null');
             $table->foreignId('verified_by')->nullable()->constrained('users')->onDelete('set null');
-            $table->string('bank_reference')->nullable();
+            $table->timestamp('submitted_at')->nullable();
+            $table->timestamp('verified_at')->nullable();
             $table->text('notes')->nullable();
+            $table->text('discrepancy_notes')->nullable();
             $table->timestamps();
+            
+            $table->index(['delivery_person_id', 'status']);
         });
 
         // Link orders to remittances
         Schema::create('cod_remittance_orders', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('remittance_id')->constrained('cod_remittances')->onDelete('cascade');
+            $table->foreignId('remittance_id')->constrained('cod_remittances')->onDelete('restrict');
             $table->foreignId('order_id')->constrained()->onDelete('restrict');
             $table->decimal('amount', 10, 2);
             $table->timestamps();
@@ -119,6 +113,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('orders', function (Blueprint $table) {
+            $table->dropForeign(['collected_by']);
             $table->dropColumn(['is_cod', 'cod_fee', 'amount_to_collect', 'payment_collected_at', 'collected_by']);
         });
         

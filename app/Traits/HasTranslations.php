@@ -3,85 +3,117 @@
 namespace App\Traits;
 
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Facades\App;
 
 trait HasTranslations
 {
+    /**
+     * Get translations relationship
+     */
     public function translations(): HasMany
     {
         return $this->hasMany($this->getTranslationModelName());
     }
 
-    public function translation($locale = null): ?object
-    {
-        $locale = $locale ?? App::getLocale();
-        
-        return $this->translations()
-            ->where('locale', $locale)
-            ->first();
-    }
-
-    public function translate($field, $locale = null)
-    {
-        $locale = $locale ?? App::getLocale();
-        $translation = $this->translation($locale);
-        
-        if ($translation && isset($translation->$field)) {
-            return $translation->$field;
-        }
-        
-        // Fallback to default locale
-        $defaultLocale = config('app.fallback_locale', 'en');
-        if ($locale !== $defaultLocale) {
-            $translation = $this->translation($defaultLocale);
-            if ($translation && isset($translation->$field)) {
-                return $translation->$field;
-            }
-        }
-        
-        return null;
-    }
-
-    public function __get($key)
-    {
-        if (in_array($key, $this->translatable ?? [])) {
-            return $this->translate($key);
-        }
-        
-        return parent::__get($key);
-    }
-
+    /**
+     * Get translation model name
+     */
     protected function getTranslationModelName(): string
     {
         return get_class($this) . 'Translation';
     }
 
-    public function scopeWithTranslation($query, $locale = null)
+    /**
+     * Get translated attribute
+     */
+    public function getTranslation(string $field, ?string $locale = null): ?string
     {
-        $locale = $locale ?? App::getLocale();
+        $locale = $locale ?? app()->getLocale();
         
+        $translation = $this->translations
+            ->where('locale', $locale)
+            ->first();
+
+        if (!$translation) {
+            // Fallback to default locale
+            $translation = $this->translations
+                ->where('locale', config('app.fallback_locale', 'en'))
+                ->first();
+        }
+
+        return $translation?->{$field};
+    }
+
+    /**
+     * Set translated attribute
+     */
+    public function setTranslation(string $field, string $value, ?string $locale = null): void
+    {
+        $locale = $locale ?? app()->getLocale();
+        
+        $translation = $this->translations()
+            ->firstOrCreate(['locale' => $locale]);
+            
+        $translation->update([$field => $value]);
+    }
+
+    /**
+     * Get all translations for a field
+     */
+    public function getTranslations(string $field): array
+    {
+        return $this->translations
+            ->pluck($field, 'locale')
+            ->toArray();
+    }
+
+    /**
+     * Magic getter for translated attributes
+     */
+    public function __get($key)
+    {
+        // Check if this is a translatable attribute
+        if (property_exists($this, 'translatable') && in_array($key, $this->translatable)) {
+            return $this->getTranslation($key) ?? parent::__get($key);
+        }
+
+        return parent::__get($key);
+    }
+
+    /**
+     * Load translations for better performance
+     */
+    public function scopeWithTranslations($query, ?string $locale = null)
+    {
         return $query->with(['translations' => function ($q) use ($locale) {
-            $q->where('locale', $locale);
+            if ($locale) {
+                $q->where('locale', $locale);
+            }
         }]);
     }
 
-    public function hasTranslation($locale = null): bool
+    /**
+     * Scope to get items by translation
+     */
+    public function scopeWhereTranslation($query, string $field, string $value, ?string $locale = null)
     {
-        $locale = $locale ?? App::getLocale();
+        $locale = $locale ?? app()->getLocale();
         
-        return $this->translations()
-            ->where('locale', $locale)
-            ->exists();
+        return $query->whereHas('translations', function ($q) use ($field, $value, $locale) {
+            $q->where('locale', $locale)
+              ->where($field, $value);
+        });
     }
 
-    public function createTranslation(array $data, $locale = null)
+    /**
+     * Scope to search in translations
+     */
+    public function scopeWhereTranslationLike($query, string $field, string $value, ?string $locale = null)
     {
-        $locale = $locale ?? App::getLocale();
-        $data['locale'] = $locale;
+        $locale = $locale ?? app()->getLocale();
         
-        return $this->translations()->updateOrCreate(
-            ['locale' => $locale],
-            $data
-        );
+        return $query->whereHas('translations', function ($q) use ($field, $value, $locale) {
+            $q->where('locale', $locale)
+              ->where($field, 'LIKE', "%{$value}%");
+        });
     }
 }

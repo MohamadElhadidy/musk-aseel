@@ -31,6 +31,8 @@ return new class extends Migration
             $table->integer('quantity');
             $table->decimal('price', 10, 2);
             $table->timestamps();
+            
+            $table->unique(['cart_id', 'product_id', 'product_variant_id']);
         });
 
         Schema::create('orders', function (Blueprint $table) {
@@ -50,9 +52,16 @@ return new class extends Migration
             $table->string('coupon_code')->nullable();
             $table->foreignId('shipping_method_id')->nullable()->constrained()->onDelete('set null');
             $table->json('shipping_method_details')->nullable();
-            // $table->foreignId('payment_method_id')->nullable()->constrained()->onDelete('set null');
+            $table->string('payment_method')->nullable(); // cod, card, paypal, etc.
             $table->text('notes')->nullable();
+            $table->timestamp('shipped_at')->nullable();
+            $table->timestamp('delivered_at')->nullable();
             $table->timestamps();
+            
+            $table->index('order_number');
+            $table->index('status');
+            $table->index('user_id');
+            $table->index('created_at');
         });
 
         Schema::create('order_items', function (Blueprint $table) {
@@ -65,6 +74,8 @@ return new class extends Migration
             $table->decimal('price', 10, 2);
             $table->decimal('total', 10, 2);
             $table->timestamps();
+            
+            $table->index('order_id');
         });
 
         Schema::create('order_addresses', function (Blueprint $table) {
@@ -79,6 +90,8 @@ return new class extends Migration
             $table->string('country');
             $table->string('postal_code')->nullable();
             $table->timestamps();
+            
+            $table->index(['order_id', 'type']);
         });
 
         Schema::create('order_status_histories', function (Blueprint $table) {
@@ -88,18 +101,22 @@ return new class extends Migration
             $table->text('comment')->nullable();
             $table->foreignId('created_by')->nullable()->constrained('users')->onDelete('set null');
             $table->timestamps();
+            
+            $table->index('order_id');
         });
 
         Schema::create('payments', function (Blueprint $table) {
             $table->id();
             $table->foreignId('order_id')->constrained()->onDelete('cascade');
-            // $table->foreignId('transaction_id')->nullable()->constrained()->onDelete('set null');
             $table->string('payment_method');
             $table->enum('status', ['pending', 'processing', 'completed', 'failed', 'cancelled', 'refunded']);
             $table->decimal('amount', 10, 2);
             $table->string('currency_code', 3);
             $table->json('gateway_response')->nullable();
+            $table->string('reference_number')->nullable();
             $table->timestamps();
+            
+            $table->index(['order_id', 'status']);
         });
     }
 

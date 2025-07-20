@@ -8,15 +8,15 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Create attributes table (Size, Color, Material, etc.)
+        // Create attributes table (size, color, material, etc.)
         Schema::create('attributes', function (Blueprint $table) {
             $table->id();
             $table->string('code')->unique(); // size, color, material
-            $table->string('type'); // select, text, number, boolean, date
-            $table->integer('sort_order')->default(0);
+            $table->enum('type', ['select', 'multiselect', 'text', 'number', 'boolean', 'date']);
+            $table->boolean('is_filterable')->default(false);
+            $table->boolean('is_variant')->default(false); // Used for product variants
             $table->boolean('is_required')->default(false);
-            $table->boolean('is_filterable')->default(true); // Can be used in filters
-            $table->boolean('is_variant')->default(true); // Used for variants (size, color)
+            $table->integer('sort_order')->default(0);
             $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
@@ -27,24 +27,20 @@ return new class extends Migration
             $table->foreignId('attribute_id')->constrained()->onDelete('cascade');
             $table->string('locale', 5);
             $table->string('name'); // Display name
-            $table->text('description')->nullable();
             $table->timestamps();
 
             $table->unique(['attribute_id', 'locale']);
         });
 
-        // Create attribute values (S, M, L for Size | Red, Blue for Color)
+        // Create attribute values (Red, Blue, XL, Cotton, etc.)
         Schema::create('attribute_values', function (Blueprint $table) {
             $table->id();
             $table->foreignId('attribute_id')->constrained()->onDelete('cascade');
-            $table->string('value'); // The actual value
-            $table->string('color_hex')->nullable(); // For color swatches
-            $table->string('image')->nullable(); // For texture/pattern swatches
+            $table->string('value'); // Actual value (red, xl, cotton)
+            $table->string('color_hex', 7)->nullable(); // For color attributes
             $table->integer('sort_order')->default(0);
             $table->boolean('is_active')->default(true);
             $table->timestamps();
-
-            $table->index(['attribute_id', 'value']);
         });
 
         // Create attribute value translations
@@ -117,8 +113,6 @@ return new class extends Migration
             $table->index('attribute_id');
         });
 
-
-
         // Product variant attributes (link variants to specific attribute values)
         Schema::create('product_variant_attributes', function (Blueprint $table) {
             $table->id();
@@ -127,31 +121,13 @@ return new class extends Migration
             $table->foreignId('attribute_value_id')->constrained()->onDelete('cascade');
             $table->timestamps();
 
-            $table->unique(
-                ['product_variant_id', 'attribute_id'],
-                'pv_attr_unique'
-            );
-
+            $table->unique(['product_variant_id', 'attribute_id']);
             $table->index(['attribute_id', 'attribute_value_id']);
-        });
-
-        // Attribute combinations for quick variant lookup
-        Schema::create('product_variant_combinations', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('product_id')->constrained()->onDelete('cascade');
-            $table->foreignId('product_variant_id')->constrained()->onDelete('cascade');
-            $table->string('combination_string'); // "color:red|size:xl|material:cotton"
-            $table->json('combination_array'); // [{"attribute_id": 1, "value_id": 5}, ...]
-            $table->timestamps();
-
-            $table->unique(['product_id', 'combination_string'], 'product_combination_unique');
-            $table->index('product_variant_id');
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('product_variant_combinations');
         Schema::dropIfExists('product_variant_attributes');
         Schema::dropIfExists('product_attributes');
         Schema::dropIfExists('category_attributes');

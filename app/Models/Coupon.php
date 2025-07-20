@@ -2,19 +2,27 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Coupon extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'code', 'description', 'type', 'value', 'minimum_amount',
-        'usage_limit', 'usage_limit_per_user', 'used_count',
-        'is_active', 'valid_from', 'valid_until'
+        'code',
+        'description',
+        'type',
+        'value',
+        'minimum_amount',
+        'usage_limit',
+        'usage_limit_per_user',
+        'used_count',
+        'is_active',
+        'valid_from',
+        'valid_until'
     ];
 
     protected $casts = [
@@ -23,7 +31,7 @@ class Coupon extends Model
         'minimum_amount' => 'decimal:2',
         'is_active' => 'boolean',
         'valid_from' => 'datetime',
-        'valid_until' => 'datetime',
+        'valid_until' => 'datetime'
     ];
 
     public function users(): BelongsToMany
@@ -44,28 +52,51 @@ class Coupon extends Model
         return $descriptions[app()->getLocale()] ?? $descriptions['en'] ?? '';
     }
 
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
+
+    public function scopeValid($query)
+    {
+        $now = now();
+        return $query->where(function ($q) use ($now) {
+            $q->whereNull('valid_from')->orWhere('valid_from', '<=', $now);
+        })->where(function ($q) use ($now) {
+            $q->whereNull('valid_until')->orWhere('valid_until', '>=', $now);
+        });
+    }
+
     public function isValid(): bool
     {
         if (!$this->is_active) return false;
-        
+
         $now = now();
-        if ($this->valid_from && $now->lt($this->valid_from)) return false;
-        if ($this->valid_until && $now->gt($this->valid_until)) return false;
+        if ($this->valid_from && $this->valid_from->gt($now)) return false;
+        if ($this->valid_until && $this->valid_until->lt($now)) return false;
         if ($this->usage_limit && $this->used_count >= $this->usage_limit) return false;
-        
+
         return true;
     }
 
-    public function canBeUsedBy(?User $user): bool
+    public function canBeUsedBy(User $user): bool
     {
         if (!$this->isValid()) return false;
-        if (!$user) return true;
-        
+
         if ($this->usage_limit_per_user) {
             $userUsage = $user->getCouponUsageCount($this);
             if ($userUsage >= $this->usage_limit_per_user) return false;
         }
-        
+
         return true;
+    }
+
+    public function getDiscountAmount(float $subtotal): float
+    {
+        if ($this->type === 'percentage') {
+            return ($subtotal * $this->value) / 100;
+        }
+
+        return min($this->value, $subtotal);
     }
 }

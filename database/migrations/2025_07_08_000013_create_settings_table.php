@@ -67,12 +67,19 @@ return new class extends Migration
 
         Schema::create('logs', function (Blueprint $table) {
             $table->id();
-            $table->string('type'); // order, payment, error, etc.
-            $table->string('level'); // info, warning, error
+            $table->string('type'); // order, payment, error, system, user_activity
+            $table->string('level')->default('info'); // debug, info, warning, error, critical
             $table->string('message');
-            $table->json('context')->nullable();
+            $table->json('context')->nullable(); // Additional context data
+            $table->morphs('loggable'); // Polymorphic relation to any model
             $table->foreignId('user_id')->nullable()->constrained()->onDelete('set null');
+            $table->string('ip_address', 45)->nullable();
+            $table->string('user_agent')->nullable();
             $table->timestamps();
+            
+            $table->index(['type', 'level']);
+            $table->index('created_at');
+            $table->index(['loggable_type', 'loggable_id']);
         });
     }
 
@@ -86,5 +93,4 @@ return new class extends Migration
         Schema::dropIfExists('pages');
         Schema::dropIfExists('settings');
     }
-    
 };

@@ -18,11 +18,6 @@ class Contact extends Model
         'status'
     ];
 
-    protected $casts = [
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
-    ];
-
     public function scopeNew($query)
     {
         return $query->where('status', 'new');
@@ -33,40 +28,13 @@ class Contact extends Model
         return $query->where('status', 'read');
     }
 
-    public function scopeReplied($query)
+    public function markAsRead(): void
     {
-        return $query->where('status', 'replied');
+        $this->update(['status' => 'read']);
     }
 
-    public function markAsRead()
-    {
-        if ($this->status === 'new') {
-            $this->update(['status' => 'read']);
-        }
-    }
-
-    public function markAsReplied()
+    public function markAsReplied(): void
     {
         $this->update(['status' => 'replied']);
-    }
-
-    public function getStatusColorAttribute(): string
-    {
-        return match($this->status) {
-            'new' => 'yellow',
-            'read' => 'blue',
-            'replied' => 'green',
-            default => 'gray'
-        };
-    }
-
-    public function getStatusLabelAttribute(): string
-    {
-        return match($this->status) {
-            'new' => __('New'),
-            'read' => __('Read'),
-            'replied' => __('Replied'),
-            default => $this->status
-        };
     }
 }

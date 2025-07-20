@@ -3,21 +3,21 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-// Country Model
 class Country extends Model
 {
     use HasFactory;
 
     protected $fillable = ['code', 'name', 'is_active'];
+    
     protected $casts = [
         'name' => 'array',
-        'is_active' => 'boolean',
+        'is_active' => 'boolean'
     ];
 
-    public function cities()
+    public function cities(): HasMany
     {
         return $this->hasMany(City::class);
     }

@@ -2,19 +2,27 @@
 
 namespace App\Models;
 
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     use HasFactory, Notifiable;
 
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
     protected $fillable = [
         'name',
         'email',
+        'email_verified_at',
         'password',
         'phone',
         'date_of_birth',
@@ -24,43 +32,89 @@ class User extends Authenticatable
         'is_admin',
     ];
 
+    /**
+     * The attributes that should be hidden for serialization.
+     *
+     * @var array<int, string>
+     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-            'date_of_birth' => 'date',
-            'is_active' => 'boolean',
-            'is_admin' => 'boolean',
-        ];
-    }
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
+        'date_of_birth' => 'date',
+        'is_active' => 'boolean',
+        'is_admin' => 'boolean',
+    ];
 
-    public function addresses(): HasMany
-    {
-        return $this->hasMany(UserAddress::class);
-    }
-
+    /**
+     * Get user's orders
+     */
     public function orders(): HasMany
     {
         return $this->hasMany(Order::class);
     }
 
+    /**
+     * Get user's addresses
+     */
+    public function addresses(): HasMany
+    {
+        return $this->hasMany(UserAddress::class);
+    }
+
+    /**
+     * Get user's default address
+     */
+    public function defaultAddress(): HasOne
+    {
+        return $this->hasOne(UserAddress::class)->where('is_default', true);
+    }
+
+    /**
+     * Get user's carts
+     */
+    public function carts(): HasMany
+    {
+        return $this->hasMany(Cart::class);
+    }
+
+    /**
+     * Get user's current cart
+     */
+    public function currentCart(): HasOne
+    {
+        return $this->hasOne(Cart::class)->latest();
+    }
+
+    /**
+     * Get user's reviews
+     */
     public function reviews(): HasMany
     {
         return $this->hasMany(Review::class);
     }
 
+    /**
+     * Get user's wishlist
+     */
     public function wishlist(): BelongsToMany
     {
         return $this->belongsToMany(Product::class, 'wishlists')
             ->withTimestamps();
     }
 
+    /**
+     * Get user's coupons
+     */
     public function coupons(): BelongsToMany
     {
         return $this->belongsToMany(Coupon::class)
@@ -68,53 +122,57 @@ class User extends Authenticatable
             ->withTimestamps();
     }
 
-    public function cart()
+    /**
+     * Get user's payment methods
+     */
+    public function paymentMethods(): HasMany
     {
-        return $this->hasOne(Cart::class)->latest();
+        return $this->hasMany(PaymentMethod::class);
     }
 
-    public function notifications(): HasMany
+    /**
+     * Get user's default payment method
+     */
+    public function defaultPaymentMethod(): HasOne
     {
-        return $this->hasMany(Notification::class, 'notifiable_id')
-            ->where('notifiable_type', static::class);
+        return $this->hasOne(PaymentMethod::class)->where('is_default', true);
     }
 
-    public function scopeActive($query)
+    /**
+     * Get user's transactions
+     */
+    public function transactions(): HasMany
     {
-        return $query->where('is_active', true);
+        return $this->hasMany(Transaction::class);
     }
 
-    public function scopeAdmins($query)
+    /**
+     * Get logs created by this user
+     */
+    public function logs(): HasMany
     {
-        return $query->where('is_admin', true);
+        return $this->hasMany(Log::class);
     }
 
-    public function getDefaultAddressAttribute()
+    /**
+     * Get user's newsletter subscriptions
+     */
+    public function newsletterSubscription(): HasOne
     {
-        return $this->addresses()
-            ->where('is_default', true)
-            ->where('type', 'shipping')
-            ->first();
+        return $this->hasOne(NewsletterSubscriber::class, 'email', 'email');
     }
 
-    public function isAdmin(): bool
-    {
-        return $this->is_admin;
-    }
-
-    public function getDefaultBillingAddressAttribute()
-    {
-        return $this->addresses()
-            ->where('is_default', true)
-            ->where('type', 'billing')
-            ->first();
-    }
-
+    /**
+     * Get full name attribute
+     */
     public function getFullNameAttribute(): string
     {
         return $this->name;
     }
 
+    /**
+     * Check if user has completed any order
+     */
     public function hasCompletedOrder(): bool
     {
         return $this->orders()
@@ -122,6 +180,9 @@ class User extends Authenticatable
             ->exists();
     }
 
+    /**
+     * Check if user can review a product
+     */
     public function canReviewProduct(Product $product): bool
     {
         // Check if user has purchased the product
@@ -129,7 +190,7 @@ class User extends Authenticatable
             ->whereHas('items', function ($q) use ($product) {
                 $q->where('product_id', $product->id);
             })
-            ->whereIn('status', ['delivered']) // Only delivered orders can be reviewed
+            ->whereIn('status', ['delivered'])
             ->exists();
             
         // Check if user hasn't already reviewed
@@ -140,6 +201,9 @@ class User extends Authenticatable
         return $hasPurchased && !$hasReviewed;
     }
 
+    /**
+     * Check if user has used a coupon
+     */
     public function hasUsedCoupon(Coupon $coupon): bool
     {
         return $this->coupons()
@@ -147,6 +211,9 @@ class User extends Authenticatable
             ->exists();
     }
 
+    /**
+     * Get coupon usage count
+     */
     public function getCouponUsageCount(Coupon $coupon): int
     {
         $pivot = $this->coupons()
@@ -156,6 +223,9 @@ class User extends Authenticatable
         return $pivot ? $pivot->pivot->usage_count : 0;
     }
 
+    /**
+     * Check if product is wishlisted
+     */
     public function isWishlisted(Product $product): bool
     {
         return $this->wishlist()
@@ -163,6 +233,9 @@ class User extends Authenticatable
             ->exists();
     }
 
+    /**
+     * Get total spent attribute
+     */
     public function getTotalSpentAttribute(): float
     {
         return $this->orders()
@@ -170,8 +243,84 @@ class User extends Authenticatable
             ->sum('total');
     }
 
+    /**
+     * Get orders count attribute
+     */
     public function getOrdersCountAttribute(): int
     {
         return $this->orders()->count();
+    }
+
+    /**
+     * Get average order value
+     */
+    public function getAverageOrderValueAttribute(): float
+    {
+        $completedOrders = $this->orders()
+            ->whereIn('status', ['delivered', 'completed']);
+            
+        $count = $completedOrders->count();
+        
+        return $count > 0 ? $completedOrders->sum('total') / $count : 0;
+    }
+
+    /**
+     * Scope active users
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
+
+    /**
+     * Scope admin users
+     */
+    public function scopeAdmins($query)
+    {
+        return $query->where('is_admin', true);
+    }
+
+    /**
+     * Scope customers (non-admin users)
+     */
+    public function scopeCustomers($query)
+    {
+        return $query->where('is_admin', false);
+    }
+
+    /**
+     * Check if user is subscribed to newsletter
+     */
+    public function isSubscribedToNewsletter(): bool
+    {
+        return $this->newsletterSubscription()
+            ->where('status', 'active')
+            ->exists();
+    }
+
+    /**
+     * Get user's preferred currency
+     */
+    public function getPreferredCurrency(): Currency
+    {
+        // You can store user's preferred currency in the database
+        // For now, return the default
+        return Currency::getDefault();
+    }
+
+    /**
+     * Send email verification notification
+     */
+    public function sendEmailVerificationNotification()
+    {
+        // Implement your email verification logic
+    }
+
+    /**
+     * Send password reset notification
+     */
+    public function sendPasswordResetNotification($token)
+    {
+        // Implement your password reset logic
     }
 }

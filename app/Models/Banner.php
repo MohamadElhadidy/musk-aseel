@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Banner extends Model
 {
@@ -20,11 +20,28 @@ class Banner extends Model
 
     protected $casts = [
         'title' => 'array',
-        'is_active' => 'boolean',
+        'sort_order' => 'integer',
+        'is_active' => 'boolean'
     ];
+
+    public function getTitleAttribute($value)
+    {
+        $titles = json_decode($value, true) ?? [];
+        return $titles[app()->getLocale()] ?? $titles['en'] ?? '';
+    }
+
+    public function getImageUrlAttribute(): string
+    {
+        return asset('storage/' . $this->image);
+    }
 
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
+    }
+
+    public function scopePosition($query, string $position)
+    {
+        return $query->where('position', $position);
     }
 }

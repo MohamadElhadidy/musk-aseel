@@ -2,23 +2,29 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class ProductVariant extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'product_id', 'attributes', 'sku', 
-        'price', 'quantity', 'is_active'
+        'product_id',
+        'attributes',
+        'sku',
+        'price',
+        'quantity',
+        'is_active'
     ];
 
     protected $casts = [
         'attributes' => 'array',
         'price' => 'decimal:2',
-        'is_active' => 'boolean',
+        'quantity' => 'integer',
+        'is_active' => 'boolean'
     ];
 
     public function product(): BelongsTo
@@ -26,27 +32,36 @@ class ProductVariant extends Model
         return $this->belongsTo(Product::class);
     }
 
-    public function cartItems()
+    public function attributeValues(): BelongsToMany
     {
-        return $this->hasMany(CartItem::class);
-    }
-
-    public function orderItems()
-    {
-        return $this->hasMany(OrderItem::class);
-    }
-
-    public function isInStock(): bool
-    {
-        return $this->quantity > 0;
+        return $this->belongsToMany(AttributeValue::class, 'product_variant_attributes')
+            ->withPivot('attribute_id')
+            ->withTimestamps();
     }
 
     public function getAttributesStringAttribute(): string
     {
-        $parts = [];
-        foreach ($this->attributes as $key => $value) {
-            $parts[] = ucfirst($key) . ': ' . $value;
+        if (is_array($this->attributes)) {
+            return collect($this->attributes)
+                ->map(fn($value, $key) => ucfirst($key) . ': ' . $value)
+                ->implode(', ');
         }
-        return implode(', ', $parts);
+        
+        return '';
+    }
+
+    public function getNameAttribute(): string
+    {
+        return $this->product->name . ' - ' . $this->attributes_string;
+    }
+
+    public function isInStock(): bool
+    {
+        return !$this->product->track_quantity || $this->quantity > 0;
+    }
+
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
     }
 }

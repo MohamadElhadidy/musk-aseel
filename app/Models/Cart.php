@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Str;
 
 class Cart extends Model
 {
@@ -27,88 +28,188 @@ class Cart extends Model
         'discount_amount' => 'decimal:2',
         'tax_amount' => 'decimal:2',
         'shipping_amount' => 'decimal:2',
-        'total' => 'decimal:2',
+        'total' => 'decimal:2'
     ];
 
+    /**
+     * Get current cart for user or session
+     */
+    public static function getCurrentCart(): ?Cart
+    {
+        if (auth()->check()) {
+            return static::firstOrCreate(['user_id' => auth()->id()]);
+        } else {
+            $sessionId = session('cart_session_id');
+            
+            if (!$sessionId) {
+                $sessionId = Str::uuid()->toString();
+                session(['cart_session_id' => $sessionId]);
+            }
+            
+            return static::firstOrCreate(['session_id' => $sessionId]);
+        }
+    }
+
+    /**
+     * Get user
+     */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
+    /**
+     * Get items
+     */
     public function items(): HasMany
     {
         return $this->hasMany(CartItem::class);
     }
 
+    /**
+     * Get coupon
+     */
     public function coupon(): BelongsTo
     {
         return $this->belongsTo(Coupon::class);
     }
 
-    public static function getCurrentCart()
-    {
-        if (auth()->check()) {
-            $cart = static::where('user_id', auth()->id())->latest()->first();
-        } else {
-            $cart = static::where('session_id', session()->getId())->latest()->first();
-        }
-
-        if (!$cart) {
-            $cart = static::create([
-                'session_id' => auth()->check() ? null : session()->getId(),
-                'user_id' => auth()->id(),
-            ]);
-        }
-
-        return $cart;
-    }
-
+    /**
+     * Add item to cart
+     */
     public function addItem(Product $product, int $quantity = 1, ?ProductVariant $variant = null): CartItem
     {
-        $price = $variant ? $variant->price : $product->price;
-        
-        // Check if item already exists in cart
+        // Check if item already exists
         $existingItem = $this->items()
             ->where('product_id', $product->id)
             ->where('product_variant_id', $variant?->id)
             ->first();
 
         if ($existingItem) {
-            // Increment quantity if item exists
             $existingItem->increment('quantity', $quantity);
-            $item = $existingItem;
-        } else {
-            // Create new item if it doesn't exist
-            $item = $this->items()->create([
-                'product_id' => $product->id,
-                'product_variant_id' => $variant?->id,
-                'quantity' => $quantity,
-                'price' => $price
-            ]);
+            $existingItem->update(['price' => $variant ? $variant->price : $product->price]);
+            return $existingItem;
         }
+
+        // Create new item
+        $item = $this->items()->create([
+            'product_id' => $product->id,
+            'product_variant_id' => $variant?->id,
+            'quantity' => $quantity,
+            'price' => $variant ? $variant->price : $product->price
+        ]);
 
         $this->calculateTotals();
 
         return $item;
     }
 
-    public function updateItemQuantity(CartItem $item, int $quantity): void
+    /**
+     * Update item quantity
+     */
+    public function updateItemQuantity(int $itemId, int $quantity): void
     {
-        if ($quantity <= 0) {
-            $item->delete();
-        } else {
-            $item->update(['quantity' => $quantity]);
+        $item = $this->items()->find($itemId);
+        
+        if ($item) {
+            if ($quantity <= 0) {
+                $item->delete();
+            } else {
+                $item->update(['quantity' => $quantity]);
+            }
+            
+            $this->calculateTotals();
+        }
+    }
+
+    /**
+     * Remove item
+     */
+    public function removeItem(int $itemId): void
+    {
+        $this->items()->find($itemId)?->delete();
+        $this->calculateTotals();
+    }
+
+    /**
+     * Apply coupon
+     */
+    public function applyCoupon(string $code): bool
+    {
+        $coupon = Coupon::where('code', $code)
+            ->active()
+            ->valid()
+            ->first();
+
+        if (!$coupon) {
+            return false;
         }
 
+        // Check if user has already used this coupon
+        if (auth()->check() && !$coupon->canBeUsedBy(auth()->user())) {
+            return false;
+        }
+
+        // Check minimum amount
+        if ($coupon->minimum_amount && $this->subtotal < $coupon->minimum_amount) {
+            return false;
+        }
+
+        $this->update(['coupon_id' => $coupon->id]);
         $this->calculateTotals();
+
+        return true;
     }
 
-    public function removeItem(CartItem $item): void
+    /**
+     * Remove coupon
+     */
+    public function removeCoupon(): void
     {
-        $item->delete();
+        $this->update(['coupon_id' => null]);
         $this->calculateTotals();
     }
 
+    /**
+     * Calculate totals
+     */
+    public function calculateTotals(): void
+    {
+        // Calculate subtotal
+        $subtotal = $this->items->sum(function ($item) {
+            return $item->price * $item->quantity;
+        });
+
+        // Calculate discount
+        $discountAmount = 0;
+        if ($this->coupon) {
+            if ($this->coupon->type === 'percentage') {
+                $discountAmount = ($subtotal * $this->coupon->value) / 100;
+            } else {
+                $discountAmount = min($this->coupon->value, $subtotal);
+            }
+        }
+
+        // Calculate tax (assuming a fixed rate for now)
+        $taxRate = Setting::get('tax_rate', 0);
+        $taxableAmount = $subtotal - $discountAmount;
+        $taxAmount = ($taxableAmount * $taxRate) / 100;
+
+        // Calculate total
+        $total = $subtotal - $discountAmount + $taxAmount + $this->shipping_amount;
+
+        // Update cart
+        $this->update([
+            'subtotal' => $subtotal,
+            'discount_amount' => $discountAmount,
+            'tax_amount' => $taxAmount,
+            'total' => max(0, $total)
+        ]);
+    }
+
+    /**
+     * Clear cart
+     */
     public function clear(): void
     {
         $this->items()->delete();
@@ -122,85 +223,45 @@ class Cart extends Model
         ]);
     }
 
-    public function applyCoupon(Coupon $coupon): bool
-    {
-        if (!$coupon->isValid() || !$coupon->canBeUsedBy(auth()->user())) {
-            return false;
-        }
-
-        $this->update(['coupon_id' => $coupon->id]);
-        $this->calculateTotals();
-
-        return true;
-    }
-
-    public function removeCoupon(): void
-    {
-        $this->update(['coupon_id' => null]);
-        $this->calculateTotals();
-    }
-
-    public function calculateTotals(): void
-    {
-        $subtotal = 0;
-
-        foreach ($this->items as $item) {
-            $subtotal += $item->price * $item->quantity;
-        }
-
-        $discountAmount = 0;
-        if ($this->coupon) {
-            if ($this->coupon->type === 'percentage') {
-                $discountAmount = $subtotal * ($this->coupon->value / 100);
-            } else {
-                $discountAmount = min($this->coupon->value, $subtotal);
-            }
-        }
-
-        $taxRate = config('shop.tax_rate', 0);
-        $taxAmount = ($subtotal - $discountAmount) * ($taxRate / 100);
-
-        $total = $subtotal - $discountAmount + $taxAmount + $this->shipping_amount;
-
-        $this->update([
-            'subtotal' => $subtotal,
-            'discount_amount' => $discountAmount,
-            'tax_amount' => $taxAmount,
-            'total' => $total
-        ]);
-    }
-
-    public function getItemsCountAttribute(): int
-    {
-        return $this->items->sum('quantity');
-    }
-
+    /**
+     * Check if cart is empty
+     */
     public function isEmpty(): bool
     {
         return $this->items->count() === 0;
     }
 
-    public function merge(Cart $otherCart): void
+    /**
+     * Get item count
+     */
+    public function getItemCountAttribute(): int
     {
-        foreach ($otherCart->items as $item) {
-            $this->addItem($item->product, $item->quantity, $item->variant);
-        }
-
-        $otherCart->delete();
+        return $this->items->sum('quantity');
     }
 
+    /**
+     * Check if all items are in stock
+     */
     public function canCheckout(): bool
     {
-        if ($this->isEmpty()) {
-            return false;
-        }
-
         foreach ($this->items as $item) {
-            if (!$item->product->isInStock() || $item->quantity > $item->product->getAvailableQuantity()) {
+            if (!$item->isInStock()) {
                 return false;
             }
         }
 
         return true;
+    }
+
+    /**
+     * Merge with another cart
+     */
+    public function mergeWith(Cart $otherCart): void
+    {
+        foreach ($otherCart->items as $item) {
+            $this->addItem($item->product, $item->quantity, $item->variant);
+        }
+
+        $otherCart->clear();
     }
 }
