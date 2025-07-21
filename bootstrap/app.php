@@ -24,10 +24,14 @@ return Application::configure(basePath: dirname(__DIR__))
             StartSession::class,
             ShareErrorsFromSession::class,
             ValidateCsrfToken::class,
-            SetLocaleAndCurrency::class, // ✅ AFTER encryption
+            // SetLocaleAndCurrency::class, // ✅ AFTER encryption
+            \App\Http\Middleware\SetLocale::class,
+            \App\Http\Middleware\SetCurrency::class,
         ]);
         $middleware->alias([
             'admin' => AdminMiddleware::class,
+            'locale' => \App\Http\Middleware\SetLocale::class,
+            'currency' => \App\Http\Middleware\SetCurrency::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

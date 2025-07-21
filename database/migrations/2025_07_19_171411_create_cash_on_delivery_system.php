@@ -15,7 +15,7 @@ return new class extends Migration
             $table->decimal('amount_to_collect', 10, 2)->nullable()->after('cod_fee');
             $table->timestamp('payment_collected_at')->nullable()->after('amount_to_collect');
             $table->foreignId('collected_by')->nullable()->after('payment_collected_at')
-                  ->constrained('users')->onDelete('set null'); // Delivery person/admin who collected
+                ->constrained('users')->onDelete('set null'); // Delivery person/admin who collected
         });
 
         // Create delivery persons table
@@ -35,14 +35,15 @@ return new class extends Migration
         Schema::create('cod_collections', function (Blueprint $table) {
             $table->id();
             $table->foreignId('order_id')->constrained()->onDelete('restrict');
-            $table->foreignId('delivery_person_id')->nullable()->constrained()->onDelete('set null');
+            $table->foreignId('delivery_person_id')->nullable()->constrained('delivery_persons')->onDelete('set null');
+
             $table->foreignId('collected_by')->constrained('users')->onDelete('restrict');
             $table->decimal('amount', 10, 2);
             $table->enum('status', ['pending', 'collected', 'remitted'])->default('pending');
             $table->timestamp('collected_at')->nullable();
             $table->text('notes')->nullable();
             $table->timestamps();
-            
+
             $table->index(['status', 'delivery_person_id']);
         });
 
@@ -50,7 +51,8 @@ return new class extends Migration
         Schema::create('delivery_assignments', function (Blueprint $table) {
             $table->id();
             $table->foreignId('order_id')->constrained()->onDelete('cascade');
-            $table->foreignId('delivery_person_id')->constrained()->onDelete('restrict');
+            $table->foreignId('delivery_person_id')->constrained('delivery_persons')->onDelete('restrict');
+
             $table->foreignId('assigned_by')->constrained('users')->onDelete('restrict');
             $table->enum('status', ['assigned', 'accepted', 'in_transit', 'delivered', 'failed', 'reassigned']);
             $table->timestamp('assigned_at');
@@ -58,8 +60,8 @@ return new class extends Migration
             $table->timestamp('delivered_at')->nullable();
             $table->text('failure_reason')->nullable();
             $table->timestamps();
-            
-            $table->unique(['order_id', 'delivery_person_id', 'assigned_at']);
+
+            $table->unique(['order_id', 'delivery_person_id', 'assigned_at'], 'order_delivery_person_assigned_at_index');
             $table->index(['delivery_person_id', 'status']);
         });
 
@@ -67,7 +69,8 @@ return new class extends Migration
         Schema::create('cod_remittances', function (Blueprint $table) {
             $table->id();
             $table->string('remittance_number')->unique();
-            $table->foreignId('delivery_person_id')->constrained()->onDelete('restrict');
+            $table->foreignId('delivery_person_id')->constrained('delivery_persons')->onDelete('restrict');
+
             $table->decimal('total_amount', 10, 2);
             $table->integer('order_count');
             $table->enum('status', ['pending', 'submitted', 'verified', 'discrepancy'])->default('pending');
@@ -78,7 +81,7 @@ return new class extends Migration
             $table->text('notes')->nullable();
             $table->text('discrepancy_notes')->nullable();
             $table->timestamps();
-            
+
             $table->index(['delivery_person_id', 'status']);
         });
 
@@ -89,7 +92,7 @@ return new class extends Migration
             $table->foreignId('order_id')->constrained()->onDelete('restrict');
             $table->decimal('amount', 10, 2);
             $table->timestamps();
-            
+
             $table->unique(['remittance_id', 'order_id']);
         });
 
@@ -116,11 +119,11 @@ return new class extends Migration
             $table->dropForeign(['collected_by']);
             $table->dropColumn(['is_cod', 'cod_fee', 'amount_to_collect', 'payment_collected_at', 'collected_by']);
         });
-        
+
         Schema::table('shipping_methods', function (Blueprint $table) {
             $table->dropColumn(['supports_cod', 'cod_fee', 'cod_fee_type']);
         });
-        
+
         Schema::dropIfExists('cod_remittance_orders');
         Schema::dropIfExists('cod_remittances');
         Schema::dropIfExists('delivery_assignments');

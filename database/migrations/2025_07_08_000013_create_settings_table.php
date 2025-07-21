@@ -79,7 +79,7 @@ return new class extends Migration
             
             $table->index(['type', 'level']);
             $table->index('created_at');
-            $table->index(['loggable_type', 'loggable_id']);
+            $table->index(['loggable_type', 'loggable_id'], 'loggable_type_id_index');
         });
     }
 

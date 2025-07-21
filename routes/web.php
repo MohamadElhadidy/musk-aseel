@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\CurrencyController;
+use App\Http\Controllers\LocaleController;
 use Illuminate\Support\Facades\Route;
 use Livewire\Volt\Volt;
 
@@ -11,6 +13,22 @@ use Livewire\Volt\Volt;
 
 // Home Page
 Volt::route('/', 'home')->name('home');
+
+// Language & Currency Switchers
+Route::get('/language/{locale}', [LocaleController::class, 'switchLanguage'])->name('language.switch');
+Route::get('/currency/{code}', [CurrencyController::class, 'switchCurrency'])->name('currency.switch');
+
+// Admin Language & Currency Management
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    // ... existing admin routes
+    
+    // Settings
+    Route::prefix('settings')->name('settings.')->group(function () {
+        Volt::route('/languages', 'admin.settings.languages')->name('languages');
+        Volt::route('/currencies', 'admin.settings.currencies')->name('currencies');
+    });
+});
+
 
 // Categories
 Volt::route('/categories', 'category-listing')->name('categories.index');
